@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>群群15號</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
 <style>
 /* 版面：上方固定一條連線列（後端網址），下方左稿右成品的編輯台雙欄，手機疊成單欄 */
 :root{
@@ -59,6 +59,37 @@ input:focus-visible,textarea:focus-visible,button:focus-visible{outline:3px soli
 #out.empty{color:var(--muted)}
 .remind{font-size:.85rem;color:var(--muted);margin:0;border-top:1px dashed var(--line);padding-top:10px}
 [hidden]{display:none!important}
+
+/* ---- 圖卡工作室（新聞圖卡、數據圖卡）：左邊設定，右邊即時預覽 ---- */
+.tab.studio{border-style:dashed}
+.tab-sep{width:1px;background:var(--line);margin-inline:4px}
+.studio{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:18px;padding-bottom:48px;align-items:start}
+@media (max-width:900px){.studio{grid-template-columns:minmax(0,1fr)}}
+.preview{position:sticky;top:12px}
+@media (max-width:900px){.preview{position:static}}
+.preview canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:4px;background:#fff}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:480px){.grid2{grid-template-columns:minmax(0,1fr)}}
+select{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:9px 10px;width:100%}
+select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.studio textarea{min-height:110px}
+.sub{font-size:.95rem;font-weight:700;margin:6px 0 0;padding-top:12px;border-top:1px dashed var(--line)}
+.slot{display:grid;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:10px 12px}
+.slot input[type=file]{background:transparent;border:0;padding:0}
+.slider{display:grid;grid-template-columns:3.5em minmax(0,1fr);align-items:center;gap:8px;font-size:.85rem;color:var(--muted)}
+.slider input{padding:0;accent-color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:6px 10px;cursor:pointer;font-size:.9rem;text-align:left}
+.chip[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.lim{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums;font-weight:400}
+.lim.over{color:var(--warn);font-weight:700}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:4px}
+table{border-collapse:collapse;width:100%;font-size:.85rem}
+th,td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+td.n{text-align:right;font-variant-numeric:tabular-nums}
+th{background:var(--bg);font-weight:700}
+.logo-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.logo-row img{height:34px;width:auto;background:#fff;border:1px solid var(--line);border-radius:4px;padding:3px}
 </style>
 </head>
 <body>
@@ -66,7 +97,7 @@ input:focus-visible,textarea:focus-visible,button:focus-visible{outline:3px soli
   <header>
     <div class="mast">
       <h1>群群15號</h1>
-      <p class="tagline">新聞寫稿助手：校稿、下標、寫稿、訪綱、新聞改寫、通稿改寫</p>
+      <p class="tagline">新聞寫稿助手：寫稿工具、新聞圖卡、數據圖卡</p>
     </div>
     <div class="conn">
       <label for="backend">後端服務網址（每次使用都要填）</label>
@@ -80,7 +111,7 @@ input:focus-visible,textarea:focus-visible,button:focus-visible{outline:3px soli
 
   <div class="tabs" role="tablist" id="tabs"></div>
 
-  <main class="desk">
+  <main class="desk" id="deskWrite">
     <section class="pane">
       <h2 id="toolName"></h2>
       <p class="what" id="toolWhat"></p>
@@ -109,6 +140,187 @@ input:focus-visible,textarea:focus-visible,button:focus-visible{outline:3px soli
       </div>
       <pre id="out" class="empty" tabindex="0">成果會出現在這裡。</pre>
       <p class="remind">發稿前請核對人名、頭銜、時間、地點與數字。標示［可能資訊不足］的地方需要另外查證。</p>
+    </section>
+  </main>
+
+  <!-- ================= 新聞圖卡 ================= -->
+  <main class="studio" id="deskCard" hidden>
+    <section class="pane">
+      <h2>新聞圖卡</h2>
+      <p class="what">放入照片和新聞標題，AI 產生黃色標題條與兩行副標，排成 1080×1080 的社群圖卡。文字產生後都可以再修改。</p>
+
+      <div class="grid2">
+        <div class="field">
+          <label for="cLayout">照片版型</label>
+          <select id="cLayout"><option value="1">單張照片</option><option value="2">兩張並排</option></select>
+        </div>
+        <div class="field">
+          <label for="cCredit">圖片來源</label>
+          <input id="cCredit" type="text" value="（圖／翻攝自FB）" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="slot" id="slot0">
+        <label for="cPhoto0"><b>照片 1</b></label>
+        <input id="cPhoto0" type="file" accept="image/*">
+        <div class="slider"><span>左右</span><input id="cX0" type="range" min="0" max="100" value="50"></div>
+        <div class="slider"><span>上下</span><input id="cY0" type="range" min="0" max="100" value="30"></div>
+        <div class="slider"><span>縮放</span><input id="cZ0" type="range" min="100" max="250" value="100"></div>
+      </div>
+      <div class="slot" id="slot1" hidden>
+        <label for="cPhoto1"><b>照片 2</b></label>
+        <input id="cPhoto1" type="file" accept="image/*">
+        <div class="slider"><span>左右</span><input id="cX1" type="range" min="0" max="100" value="50"></div>
+        <div class="slider"><span>上下</span><input id="cY1" type="range" min="0" max="100" value="30"></div>
+        <div class="slider"><span>縮放</span><input id="cZ1" type="range" min="100" max="250" value="100"></div>
+      </div>
+
+      <p class="sub">讓 AI 產生圖卡文字</p>
+      <div class="field">
+        <label for="cTitle">新聞標題</label>
+        <input id="cTitle" type="text" autocomplete="off" placeholder="例：賴薇如宣布懷孕！41歲試管外孕後驚喜自然受孕">
+      </div>
+      <div class="field">
+        <label for="cContent">新聞內文（選填，貼了 AI 抓重點會更準）</label>
+        <textarea id="cContent" placeholder="把新聞稿或重點貼在這裡"></textarea>
+      </div>
+      <div class="bar">
+        <span class="count">AI 會給 3 組文字讓你挑</span>
+        <button class="btn" id="cGo" type="button">產生圖卡文字</button>
+      </div>
+      <p class="status" id="cStatus" role="status"></p>
+      <div class="chips" id="cChips" hidden></div>
+
+      <p class="sub">圖卡上的文字</p>
+      <div class="grid2">
+        <div class="field">
+          <label for="cTag">標籤</label>
+          <select id="cTag">
+            <option value="快訊／">快訊／</option><option value="獨家／">獨家／</option><option value="直擊／">直擊／</option><option value="">不加標籤</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="cHead">黃色標題條 <span class="lim" id="limHead"></span></label>
+          <input id="cHead" type="text" autocomplete="off" value="賴薇如41歲懷孕了！">
+        </div>
+      </div>
+      <div class="field">
+        <label for="cLine1">副標第一行 <span class="lim" id="limL1"></span></label>
+        <input id="cLine1" type="text" autocomplete="off" value="10秒就出現兩條線">
+      </div>
+      <div class="field">
+        <label for="cLine2">副標第二行 <span class="lim" id="limL2"></span></label>
+        <input id="cLine2" type="text" autocomplete="off" value="試管外孕後驚喜自然受孕">
+      </div>
+      <div class="field">
+        <div class="bar"><label for="cCaption">社群貼文文案</label><button class="ghost" id="cCopyCap" type="button">複製文案</button></div>
+        <textarea id="cCaption" placeholder="按「產生圖卡文字」後，AI 會一併寫好貼文文案"></textarea>
+      </div>
+
+      <p class="sub">Logo</p>
+      <div class="logo-row">
+        <input id="logoFile" type="file" accept="image/png,image/svg+xml,image/webp,image/jpeg" style="flex:1 1 200px;min-width:0">
+        <img id="logoThumb" alt="目前的 Logo" hidden>
+        <button class="ghost" id="logoClear" type="button" hidden>移除</button>
+      </div>
+      <p class="hint">上傳一次公司 Logo（建議透明背景 PNG），會記在這台電腦的瀏覽器，新聞圖卡和數據圖卡共用。</p>
+    </section>
+
+    <section class="pane preview">
+      <div class="bar">
+        <h2>預覽</h2>
+        <button class="btn" id="cDownload" type="button">下載圖卡 PNG</button>
+      </div>
+      <canvas id="cCanvas" width="1080" height="1080" aria-label="新聞圖卡預覽"></canvas>
+      <p class="remind">左邊的文字是範例，換成你的照片和新聞後再下載。發布前請核對人名與事實，並確認照片可以使用。</p>
+    </section>
+  </main>
+
+  <!-- ================= 數據圖卡 ================= -->
+  <main class="studio" id="deskData" hidden>
+    <section class="pane">
+      <h2>數據圖卡</h2>
+      <p class="what">從政府開放資料抓全國電影票房、演唱會資訊，做成社群用的排行圖，並標上資料來源。</p>
+
+      <div class="grid2">
+        <div class="field">
+          <label for="dSet">資料</label>
+          <select id="dSet"><option value="box">全國電影票房</option><option value="concert">演唱會資訊</option></select>
+        </div>
+        <div class="field">
+          <label for="dSize">圖卡尺寸</label>
+          <select id="dSize"><option value="1080">1:1（1080×1080）</option><option value="1350">4:5（1080×1350）</option></select>
+        </div>
+      </div>
+
+      <div class="grid2" id="boxOpts">
+        <div class="field">
+          <label for="dBoxMode">範圍</label>
+          <select id="dBoxMode">
+            <option value="week">上週週票房</option>
+            <option value="recent">近 5 週上映・累計票房</option>
+            <option value="year">今年上映・累計票房</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="dBoxMetric">數值</label>
+          <select id="dBoxMetric"><option value="amount">票房金額</option><option value="tickets">觀影人次</option></select>
+        </div>
+      </div>
+
+      <div class="grid2" id="conOpts" hidden>
+        <div class="field">
+          <label for="dConDays">期間</label>
+          <select id="dConDays"><option value="30">未來 30 天</option><option value="60" selected>未來 60 天</option><option value="90">未來 90 天</option></select>
+        </div>
+        <div class="field">
+          <label for="dConView">圖表</label>
+          <select id="dConView">
+            <option value="city">各縣市場次</option>
+            <option value="month">各月份場次</option>
+            <option value="venue">熱門場館場次</option>
+            <option value="list">近期演唱會一覽</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="field">
+          <label for="dCount">顯示筆數</label>
+          <select id="dCount"><option value="5">前 5 名</option><option value="8">前 8 名</option><option value="10" selected>前 10 名</option></select>
+        </div>
+        <div class="field" style="align-content:end">
+          <button class="btn" id="dGo" type="button">抓取資料</button>
+        </div>
+      </div>
+      <p class="status" id="dStatus" role="status"></p>
+
+      <p class="sub">圖卡上的文字</p>
+      <div class="field">
+        <label for="dLabel">左上標籤</label>
+        <input id="dLabel" type="text" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="dTitle">標題</label>
+        <input id="dTitle" type="text" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="dSubtitle">副標</label>
+        <input id="dSubtitle" type="text" autocomplete="off">
+      </div>
+
+      <p class="sub">資料內容（核對用）</p>
+      <div class="tablewrap"><table id="dTable"></table></div>
+      <p class="hint" id="dNote"></p>
+    </section>
+
+    <section class="pane preview">
+      <div class="bar">
+        <h2>預覽</h2>
+        <button class="btn" id="dDownload" type="button">下載圖卡 PNG</button>
+      </div>
+      <canvas id="dCanvas" width="1080" height="1080" aria-label="數據圖卡預覽"></canvas>
+      <p class="remind">Logo 在「新聞圖卡」分頁上傳，兩邊共用。</p>
     </section>
   </main>
 </div>
@@ -168,19 +380,32 @@ const $ = id => document.getElementById(id);
 let current = TOOLS[0];
 const drafts = {};   // 各工具各自保留輸入，只存在記憶體
 
+const STUDIOS = [
+  { id:"card", name:"新聞圖卡", desk:"deskCard", studio:true },
+  { id:"data", name:"數據圖卡", desk:"deskData", studio:true }
+];
+
 function renderTabs(){
   $("tabs").innerHTML = "";
-  TOOLS.forEach(t => {
+  const add = t => {
     const b = document.createElement("button");
-    b.className = "tab"; b.type = "button"; b.textContent = t.name;
+    b.className = "tab" + (t.studio ? " studio" : ""); b.type = "button"; b.textContent = t.name;
     b.setAttribute("role","tab"); b.setAttribute("aria-selected", t === current);
     b.onclick = () => selectTool(t);
     $("tabs").appendChild(b);
-  });
+  };
+  TOOLS.forEach(add);
+  const sep = document.createElement("span"); sep.className = "tab-sep"; sep.setAttribute("aria-hidden","true");
+  $("tabs").appendChild(sep);
+  STUDIOS.forEach(add);
 }
 function selectTool(t){
-  drafts[current.id] = { src:$("src").value, extra:$("extra").value };
+  if (!current.studio) drafts[current.id] = { src:$("src").value, extra:$("extra").value };
   current = t;
+  $("deskWrite").hidden = !!t.studio;
+  STUDIOS.forEach(x => { $(x.desk).hidden = x !== t; });
+  try { localStorage.setItem("qq15-tab", t.id); } catch(e){}
+  if (t.studio) { renderTabs(); if (window.onStudioShow) window.onStudioShow(t.id); return; }
   $("toolName").textContent = t.name;
   $("toolWhat").textContent = t.what;
   $("srcLabel").textContent = t.srcLabel;
@@ -271,6 +496,469 @@ $("copy").onclick = async () => {
 };
 
 selectTool(TOOLS[0]);
+(function(){ let id = null; try { id = localStorage.getItem("qq15-tab"); } catch(e){}
+  const t = [...TOOLS, ...STUDIOS].find(x => x.id === id); if (t && t !== current) selectTool(t); })();
+</script>
+<script>
+// ======================= 圖卡工作室：新聞圖卡＋數據圖卡 =======================
+(function(){
+"use strict";
+const FONT = '"Noto Sans TC","PingFang TC","Microsoft JhengHei","Noto Sans CJK TC",sans-serif';
+const C = { yellow:"#FFD43B", ink:"#141414", grey:"#6B6B6B", line:"#E6E6E6", track:"#F3F1EA", white:"#FFFFFF" };
+
+// ---------- 共用工具 ----------
+function font(w, px){ return `${w} ${px}px ${FONT}`; }
+async function ensureFonts(texts){
+  // Google Fonts 的中文字型是分片載入，畫圖前先載入這次會用到的字
+  if (!document.fonts || !document.fonts.load) return;
+  const all = texts.join("") + "0123456789０１２３４５６７８９／：、，。！？…%萬億場";
+  try { await Promise.all([500, 700, 900].map(w => document.fonts.load(font(w, 40), all))); } catch(e){}
+}
+function fitFont(ctx, text, weight, maxPx, minPx, maxW){
+  let px = maxPx;
+  ctx.font = font(weight, px);
+  while (px > minPx && ctx.measureText(text).width > maxW) { px -= 2; ctx.font = font(weight, px); }
+  return px;
+}
+function ellipsis(ctx, text, maxW){
+  if (ctx.measureText(text).width <= maxW) return text;
+  let t = text;
+  while (t.length > 1 && ctx.measureText(t + "…").width > maxW) t = t.slice(0, -1);
+  return t + "…";
+}
+function roundRect(ctx, x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+function loadImageFromFile(file){
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => { const img = new Image(); img.onload = () => resolve({ img, src: fr.result }); img.onerror = reject; img.src = fr.result; };
+    fr.onerror = reject;
+    fr.readAsDataURL(file);
+  });
+}
+function loadImageFromSrc(src){
+  return new Promise((resolve, reject) => { const img = new Image(); img.onload = () => resolve(img); img.onerror = reject; img.src = src; });
+}
+function debounce(fn, ms){ let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+function download(canvas, name){
+  canvas.toBlob(b => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(b); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }, "image/png");
+}
+function stamp(){ const d = new Date(); return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}-${String(d.getHours()).padStart(2,"0")}${String(d.getMinutes()).padStart(2,"0")}`; }
+function setSt(el, msg, err){ el.textContent = msg; el.className = "status" + (err ? " err" : ""); }
+async function callBackend(path, opts){
+  const url = baseUrl();
+  if (!/^https?:\/\//i.test(url)) throw new Error("請先在最上方填入後端服務網址。");
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 150000);
+  try {
+    const r = await fetch(url + path, Object.assign({ signal: ctrl.signal }, opts || {}));
+    const raw = await r.text();
+    let data = null; try { data = JSON.parse(raw); } catch(e){}
+    if (!r.ok) {
+      if (r.status === 404) throw new Error("後端還沒有這個功能，請先更新後端的 server.js。");
+      throw new Error((data && data.error) || `後端回應錯誤（${r.status}）`);
+    }
+    if (!data) throw new Error("後端回傳的格式不正確。");
+    return data;
+  } catch(e) {
+    if (e.name === "AbortError") throw new Error("等太久沒有回應，請確認後端服務正常後再試一次。");
+    if (e instanceof TypeError) throw new Error("連不上後端服務。請確認網址正確、服務有啟動。後端剛喚醒時可能要等將近一分鐘。");
+    throw e;
+  } finally { clearTimeout(timer); }
+}
+
+// ---------- Logo（兩種圖卡共用，記在這台電腦的瀏覽器） ----------
+let logoImg = null;
+async function setLogo(src, save){
+  try { logoImg = src ? await loadImageFromSrc(src) : null; } catch(e){ logoImg = null; }
+  $("logoThumb").hidden = !logoImg; $("logoClear").hidden = !logoImg;
+  if (logoImg) $("logoThumb").src = src;
+  if (save) { try { src ? localStorage.setItem("qq15-logo", src) : localStorage.removeItem("qq15-logo"); } catch(e){} }
+  drawCard(); drawData();
+}
+$("logoFile").addEventListener("change", async e => {
+  const f = e.target.files[0]; if (!f) return;
+  const { src } = await loadImageFromFile(f);
+  setLogo(src, true);
+});
+$("logoClear").onclick = () => { $("logoFile").value = ""; setLogo(null, true); };
+function drawLogo(ctx, W, H, bottomPad){
+  if (!logoImg) return;
+  const h = 58, w = logoImg.width * (h / logoImg.height);
+  const maxW = 260, scale = w > maxW ? maxW / w : 1;
+  ctx.drawImage(logoImg, W - 72 - w * scale, H - bottomPad - h * scale, w * scale, h * scale);
+}
+
+// =========================== 新聞圖卡 ===========================
+const cv = $("cCanvas"), cx = cv.getContext("2d");
+const photos = [null, null];
+const LIMIT = { head: 11, line: 13 };
+
+function textLen(s){ return [...String(s || "")].length; }
+function updateLimits(){
+  const h = textLen($("cHead").value), l1 = textLen($("cLine1").value), l2 = textLen($("cLine2").value);
+  const set = (el, n, max) => { el.textContent = `${n}／${max} 字`; el.classList.toggle("over", n > max); };
+  set($("limHead"), h, LIMIT.head); set($("limL1"), l1, LIMIT.line); set($("limL2"), l2, LIMIT.line);
+}
+
+function drawCover(ctx, img, x, y, w, h, px, py, zoom){
+  const s = Math.max(w / img.width, h / img.height) * zoom;
+  const dw = img.width * s, dh = img.height * s;
+  const dx = x + (w - dw) * px, dy = y + (h - dh) * py;
+  ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  ctx.drawImage(img, dx, dy, dw, dh);
+  ctx.restore();
+}
+function drawPhotoPlaceholder(ctx, x, y, w, h, label){
+  const g = ctx.createLinearGradient(x, y, x + w, y + h);
+  g.addColorStop(0, "#D9D6CE"); g.addColorStop(1, "#BDB8AD");
+  ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = "rgba(20,20,20,.45)"; ctx.font = font(700, 34); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(label, x + w / 2, y + h / 2 - 40);
+}
+
+async function renderCard(){
+  const tag = $("cTag").value;
+  const head = tag + $("cHead").value.trim();
+  const l1 = $("cLine1").value.trim(), l2 = $("cLine2").value.trim(), credit = $("cCredit").value.trim();
+  await ensureFonts([head, l1, l2, credit, "上傳照片後顯示在這裡"]);
+  drawCard();
+}
+function drawCard(){
+  const W = 1080, H = 1080, PH = 702, n = +$("cLayout").value;
+  const ctx = cx;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = C.white; ctx.fillRect(0, 0, W, H);
+
+  // 照片區
+  const slots = n === 2 ? [[0, 0, W / 2 - 2, PH], [W / 2 + 2, 0, W / 2 - 2, PH]] : [[0, 0, W, PH]];
+  slots.forEach((r, i) => {
+    const p = photos[i];
+    if (p) drawCover(ctx, p.img, r[0], r[1], r[2], r[3], $("cX" + i).value / 100, $("cY" + i).value / 100, $("cZ" + i).value / 100);
+    else drawPhotoPlaceholder(ctx, r[0], r[1], r[2], r[3], n === 2 ? `照片 ${i + 1}` : "上傳照片後顯示在這裡");
+  });
+
+  // 圖片來源
+  const credit = $("cCredit").value.trim();
+  if (credit) {
+    ctx.save();
+    ctx.font = font(700, 30); ctx.textAlign = "left"; ctx.textBaseline = "top";
+    ctx.shadowColor = "rgba(0,0,0,.55)"; ctx.shadowBlur = 8; ctx.shadowOffsetY = 1;
+    ctx.fillStyle = C.white; ctx.fillText(credit, 40, 38);
+    ctx.restore();
+  }
+
+  // 黃色標題條，壓在照片下緣
+  const head = $("cTag").value + $("cHead").value.trim();
+  if (head) {
+    const px = fitFont(ctx, head, 900, 62, 36, W * 0.86 - 80);
+    const tw = ctx.measureText(head).width;
+    const bw = Math.min(Math.max(tw + 88, W * 0.6), W * 0.9), bh = 108;
+    const bx = (W - bw) / 2, by = PH - bh / 2;
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,.12)"; ctx.shadowBlur = 10; ctx.shadowOffsetY = 3;
+    ctx.fillStyle = C.yellow; roundRect(ctx, bx, by, bw, bh, 12); ctx.fill();
+    ctx.restore();
+    ctx.fillStyle = C.ink; ctx.font = font(900, px); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(head, W / 2, by + bh / 2 + 2);
+  }
+
+  // 兩行副標
+  const lines = [$("cLine1").value.trim(), $("cLine2").value.trim()].filter(Boolean);
+  ctx.fillStyle = C.ink; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  const ys = lines.length === 1 ? [862] : [826, 908];
+  lines.forEach((t, i) => { fitFont(ctx, t, 900, 56, 34, W * 0.86); ctx.fillText(t, W / 2, ys[i]); });
+
+  drawLogo(ctx, W, H, 64);
+}
+const renderCardSoon = debounce(renderCard, 120);
+
+["cHead", "cLine1", "cLine2", "cCredit"].forEach(id => $(id).addEventListener("input", () => { updateLimits(); renderCardSoon(); }));
+["cTag", "cLayout"].forEach(id => $(id).addEventListener("change", () => { $("slot1").hidden = $("cLayout").value !== "2"; renderCardSoon(); }));
+[0, 1].forEach(i => {
+  ["cX", "cY", "cZ"].forEach(k => $(k + i).addEventListener("input", drawCard));
+  $("cPhoto" + i).addEventListener("change", async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try { photos[i] = await loadImageFromFile(f); } catch(err) { photos[i] = null; setSt($("cStatus"), "這張照片讀不出來，請換一張 JPG 或 PNG。", true); }
+    ["cX", "cY", "cZ"].forEach(k => { $(k + i).value = k === "cZ" ? 100 : k === "cY" ? 30 : 50; });
+    drawCard();
+  });
+});
+
+// AI 產生圖卡文字
+let cardOptions = [];
+function applyOption(i){
+  const o = cardOptions[i]; if (!o) return;
+  const strip = s => String(s || "").replace(/^(快訊|獨家|直擊)[／\/]\s*/, "").trim();
+  $("cHead").value = strip(o.headline); $("cLine1").value = strip(o.line1); $("cLine2").value = strip(o.line2);
+  [...$("cChips").children].forEach((b, j) => b.setAttribute("aria-pressed", j === i));
+  updateLimits(); renderCard();
+}
+$("cGo").onclick = async () => {
+  const title = $("cTitle").value.trim(), content = $("cContent").value.trim();
+  if (!title && !content) { setSt($("cStatus"), "請先填新聞標題，或貼上新聞內文。", true); $("cTitle").focus(); return; }
+  $("cGo").disabled = true; setSt($("cStatus"), "AI 產生中，通常 10 到 30 秒。");
+  try {
+    const data = await callBackend("/api/card", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title, content }) });
+    cardOptions = Array.isArray(data.options) ? data.options : [];
+    if (!cardOptions.length) throw new Error("AI 沒有產出文字，請再試一次。");
+    const box = $("cChips"); box.innerHTML = "";
+    cardOptions.forEach((o, i) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "chip"; b.textContent = `第 ${i + 1} 組：${String(o.headline || "").replace(/^(快訊|獨家|直擊)[／\/]\s*/, "")}`;
+      b.onclick = () => applyOption(i);
+      box.appendChild(b);
+    });
+    box.hidden = false;
+    if (data.caption) $("cCaption").value = data.caption;
+    applyOption(0);
+    setSt($("cStatus"), "完成。點上面的按鈕可以換另一組，文字也可以直接修改。");
+  } catch(e) { setSt($("cStatus"), e.message, true); }
+  finally { $("cGo").disabled = false; }
+};
+$("cCopyCap").onclick = async () => {
+  const t = $("cCaption").value; if (!t) return;
+  try { await navigator.clipboard.writeText(t); } catch(e){ $("cCaption").select(); document.execCommand("copy"); }
+  $("cCopyCap").textContent = "已複製"; setTimeout(() => $("cCopyCap").textContent = "複製文案", 1500);
+};
+$("cDownload").onclick = async () => { await renderCard(); download(cv, `新聞圖卡-${stamp()}.png`); };
+
+// =========================== 數據圖卡 ===========================
+const dv = $("dCanvas"), dx = dv.getContext("2d");
+let dataState = null; // { kind:"bars"|"list", rows:[{label, value, valueText, sub}], source, demo }
+let concertCache = null;
+
+function fmtMoney(v){
+  if (v >= 1e8) return (v / 1e8).toFixed(v >= 1e9 ? 1 : 2).replace(/\.?0+$/, "") + "億";
+  if (v >= 1e4) return Math.round(v / 1e4).toLocaleString("zh-TW") + "萬";
+  return Math.round(v).toLocaleString("zh-TW");
+}
+function fmtCount(v){
+  if (v >= 1e4) return (v / 1e4).toFixed(1).replace(/\.0$/, "") + "萬";
+  return Math.round(v).toLocaleString("zh-TW");
+}
+function md(d){ const [, m, dd] = d.split("-"); return `${+m}/${+dd}`; }
+function ymd(d){ return d.replace(/-/g, "/"); }
+const WEEK = "日一二三四五六";
+
+function renderTable(head, rows){
+  const t = $("dTable"); t.innerHTML = "";
+  const tr = document.createElement("tr");
+  head.forEach(h => { const th = document.createElement("th"); th.textContent = h; tr.appendChild(th); });
+  t.appendChild(tr);
+  rows.forEach(r => {
+    const tr2 = document.createElement("tr");
+    r.forEach((c, i) => { const td = document.createElement("td"); td.textContent = c; if (typeof c === "number" || /^[\d,.]+(萬|億)?$/.test(String(c))) td.className = "n"; tr2.appendChild(td); });
+    t.appendChild(tr2);
+  });
+}
+
+function demoState(){
+  $("dLabel").value = "票房快報"; $("dTitle").value = "全台電影週票房 TOP 5"; $("dSubtitle").value = "範例資料，按「抓取資料」換成最新數字";
+  dataState = { kind: "bars", demo: true, source: "資料來源：國家電影及視聽文化中心 全國電影票房統計",
+    rows: [["範例電影 A", 52300000], ["範例電影 B", 31800000], ["範例電影 C", 18450000], ["範例電影 D", 9620000], ["範例電影 E", 4210000]]
+      .map(([label, value]) => ({ label, value, valueText: fmtMoney(value) })) };
+  renderTable(["排名", "片名", "金額"], dataState.rows.map((r, i) => [i + 1, r.label, r.valueText]));
+  $("dNote").textContent = "目前是範例資料，圖上會打上「範例」浮水印。";
+}
+
+async function fetchBox(){
+  const mode = $("dBoxMode").value, n = +$("dCount").value, metric = $("dBoxMetric").value;
+  const data = await callBackend(`/api/data/boxoffice?mode=${mode}&size=${n}`);
+  const items = data.items || [];
+  if (!items.length) throw new Error("這個範圍沒有票房資料。");
+  const isWeek = mode === "week";
+  const val = f => metric === "tickets" ? (isWeek ? f.tickets : f.totalTickets) : (isWeek ? f.amount : f.totalAmount);
+  const sorted = items.slice().sort((a, b) => val(b) - val(a));
+  const unit = metric === "tickets" ? "觀影人次" : "票房";
+  const titles = {
+    week: [`全台電影週票房 TOP ${sorted.length}`, `${ymd(data.start)}–${md(data.end)}｜${metric === "tickets" ? "單位：人次" : "單位：新台幣"}`],
+    recent: [`近期上映電影累計${unit} TOP ${sorted.length}`, `${md(data.start)} 後上映｜統計至 ${ymd(data.end)}`],
+    year: [`${data.end.slice(0, 4)} 年上映電影累計${unit} TOP ${sorted.length}`, `統計至 ${ymd(data.end)}`]
+  }[mode];
+  $("dLabel").value = metric === "tickets" ? "觀影人次" : "票房快報"; $("dTitle").value = titles[0]; $("dSubtitle").value = titles[1];
+  dataState = { kind: "bars", demo: false, source: "資料來源：國家電影及視聽文化中心 全國電影票房統計",
+    rows: sorted.map(f => ({ label: f.name, value: val(f), valueText: metric === "tickets" ? fmtCount(val(f)) + "人次" : fmtMoney(val(f)) })) };
+  renderTable(["排名", "片名", "上映日", "國別", isWeek ? "週金額" : "累計金額", isWeek ? "週人次" : "累計人次"],
+    sorted.map((f, i) => [i + 1, f.name, f.releaseDate, f.country, (isWeek ? f.amount : f.totalAmount).toLocaleString("zh-TW"), (isWeek ? f.tickets : f.totalTickets).toLocaleString("zh-TW")]));
+  $("dNote").textContent = isWeek ? "週票房為全國戲院該週銷售加總，戲院每週一上傳上週數字，公布後才會更新。" : "累計票房為上映至今的全國銷售加總。";
+}
+
+function concertView(){
+  const d = concertCache; if (!d) return;
+  const view = $("dConView").value, n = +$("dCount").value, days = $("dConDays").value;
+  const shows = d.shows || [];
+  const range = `${md(d.from)}–${md(d.to)}`;
+  const src = "資料來源：文化部文化資料開放服務網（演唱會類別）";
+  if (!shows.length) throw new Error("這段期間文化部資料裡沒有演唱會場次。");
+  const countBy = keyFn => { const m = new Map(); shows.forEach(s => { const k = keyFn(s); if (k) m.set(k, (m.get(k) || 0) + 1); }); return [...m.entries()]; };
+  $("dLabel").value = "演唱會";
+  if (view === "list") {
+    const seen = new Set(), rows = [];
+    for (const s of shows) { const k = s.title + s.date + s.venue; if (seen.has(k)) continue; seen.add(k); rows.push(s); if (rows.length >= n) break; }
+    $("dTitle").value = "近期演唱會一覽"; $("dSubtitle").value = `${range}｜依日期排序`;
+    dataState = { kind: "list", demo: false, source: src,
+      rows: rows.map(s => ({ date: s.date, label: s.title, sub: [s.venue, s.city !== "其他" ? s.city : ""].filter(Boolean).join("｜"), time: s.time })) };
+    renderTable(["日期", "時間", "演出", "場館", "縣市"], rows.map(s => [s.date, s.time, s.title, s.venue, s.city]));
+  } else {
+    let pairs;
+    if (view === "city") { pairs = countBy(s => s.city).sort((a, b) => b[1] - a[1]); $("dTitle").value = `未來 ${days} 天演唱會 各縣市場次`; }
+    if (view === "venue") { pairs = countBy(s => s.venue).sort((a, b) => b[1] - a[1]); $("dTitle").value = `演唱會熱門場館 TOP ${Math.min(n, pairs.length)}`; }
+    if (view === "month") {
+      pairs = countBy(s => s.date.slice(0, 7)).sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([k, v], i, arr) => [(arr[0][0].slice(0, 4) !== arr[arr.length - 1][0].slice(0, 4) ? k.slice(0, 4) + "年" : "") + (+k.slice(5)) + "月", v]);
+      $("dTitle").value = "各月份演唱會場次";
+    }
+    pairs = pairs.slice(0, n);
+    $("dSubtitle").value = `${range}｜共 ${shows.length} 場`;
+    dataState = { kind: "bars", demo: false, source: src, keepOrder: view === "month",
+      rows: pairs.map(([label, value]) => ({ label, value, valueText: value + " 場" })) };
+    renderTable(["項目", "場次"], pairs.map(([l, v]) => [l, v]));
+  }
+  $("dNote").textContent = `文化部資料由主辦單位自行登錄，未必涵蓋所有演唱會；本次期間內共 ${shows.length} 場、原始資料 ${d.events} 筆活動。`;
+}
+async function fetchConcert(){
+  concertCache = await callBackend(`/api/data/concerts?days=${$("dConDays").value}`);
+  concertView();
+}
+
+async function renderData(){
+  if (!dataState) return;
+  const texts = [$("dLabel").value, $("dTitle").value, $("dSubtitle").value, dataState.source, "範例"]
+    .concat(dataState.rows.map(r => (r.label || "") + (r.valueText || "") + (r.sub || "") + (r.time || "")));
+  await ensureFonts(texts);
+  drawData();
+}
+function drawData(){
+  if (!dataState) return;
+  const W = 1080, H = +$("dSize").value, ctx = dx;
+  if (dv.height !== H) dv.height = H;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = C.white; ctx.fillRect(0, 0, W, H);
+  const M = 72;
+
+  // 標頭：標籤、標題、副標
+  let y = 70;
+  const label = $("dLabel").value.trim();
+  if (label) {
+    ctx.font = font(900, 30); const lw = ctx.measureText(label).width + 36;
+    ctx.fillStyle = C.yellow; roundRect(ctx, M, y, lw, 52, 8); ctx.fill();
+    ctx.fillStyle = C.ink; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText(label, M + 18, y + 27);
+    y += 76;
+  }
+  const title = $("dTitle").value.trim();
+  ctx.fillStyle = C.ink; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+  fitFont(ctx, title, 900, 66, 40, W - M * 2); ctx.fillText(title, M, y + 58);
+  y += 80;
+  const sub = $("dSubtitle").value.trim();
+  if (sub) { ctx.fillStyle = C.grey; ctx.font = font(500, 32); ctx.fillText(ellipsis(ctx, sub, W - M * 2), M, y + 36); y += 50; }
+  y += 30;
+  ctx.fillStyle = C.ink; ctx.fillRect(M, y, W - M * 2, 4);
+  y += 36;
+
+  // 頁尾區域
+  const footTop = H - 150;
+  const rows = dataState.rows;
+  const areaH = footTop - y;
+
+  if (dataState.kind === "bars") {
+    const rh = Math.min(areaH / Math.max(rows.length, 1), 128);
+    const max = Math.max(...rows.map(r => r.value), 1);
+    const labelPx = rh >= 100 ? 34 : rh >= 80 ? 30 : 26;
+    const barH = Math.max(14, Math.min(28, rh * 0.24));
+    const rankW = 64, barX = M + rankW, barMax = W - M - barX - 190;
+    rows.forEach((r, i) => {
+      const top = y + i * rh;
+      // 名次
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillStyle = i === 0 && !dataState.keepOrder ? C.ink : C.grey;
+      ctx.font = font(900, Math.round(labelPx * 1.25));
+      ctx.fillText(dataState.keepOrder ? "" : String(i + 1), M + rankW / 2 - 8, top + rh * 0.5);
+      // 名稱
+      ctx.textAlign = "left"; ctx.textBaseline = "alphabetic"; ctx.fillStyle = C.ink; ctx.font = font(700, labelPx);
+      const lx = dataState.keepOrder ? M : barX;
+      ctx.fillText(ellipsis(ctx, r.label, W - M - lx), lx, top + rh * 0.42);
+      // 長條
+      const bx = dataState.keepOrder ? M : barX, bmax = dataState.keepOrder ? barMax + rankW : barMax;
+      const by = top + rh * 0.56, bw = Math.max(8, bmax * (r.value / max));
+      ctx.fillStyle = C.track; roundRect(ctx, bx, by, bmax, barH, barH / 2); ctx.fill();
+      ctx.fillStyle = C.yellow; roundRect(ctx, bx, by, bw, barH, barH / 2); ctx.fill();
+      // 數值
+      ctx.fillStyle = C.ink; ctx.font = font(900, Math.round(labelPx * 0.95)); ctx.textBaseline = "middle";
+      ctx.fillText(r.valueText, bx + bmax + 20, by + barH / 2);
+    });
+  } else {
+    const rh = Math.min(areaH / Math.max(rows.length, 1), 120);
+    const tPx = rh >= 100 ? 34 : rh >= 80 ? 30 : 26;
+    rows.forEach((r, i) => {
+      const top = y + i * rh;
+      const [yy, mm, dd] = r.date.split("-").map(Number);
+      const wd = WEEK[new Date(Date.UTC(yy, mm - 1, dd)).getUTCDay()];
+      const boxW = 150, boxH = Math.min(rh - 18, 88);
+      ctx.fillStyle = C.yellow; roundRect(ctx, M, top + (rh - boxH) / 2, boxW, boxH, 8); ctx.fill();
+      ctx.fillStyle = C.ink; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.font = font(900, Math.round(boxH * 0.4)); ctx.fillText(`${mm}/${dd}`, M + boxW / 2, top + rh / 2 - boxH * 0.12);
+      ctx.font = font(700, Math.round(boxH * 0.24)); ctx.fillText(`週${wd}${r.time ? " " + r.time : ""}`, M + boxW / 2, top + rh / 2 + boxH * 0.28);
+      const tx = M + boxW + 28, tw = W - M - tx;
+      ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+      ctx.font = font(700, tPx); ctx.fillText(ellipsis(ctx, r.label, tw), tx, top + rh / 2 - 2);
+      ctx.fillStyle = C.grey; ctx.font = font(500, Math.round(tPx * 0.78)); ctx.fillText(ellipsis(ctx, r.sub || "", tw), tx, top + rh / 2 + tPx * 0.95);
+      if (i < rows.length - 1) { ctx.fillStyle = C.line; ctx.fillRect(tx, top + rh - 1, tw, 2); }
+    });
+  }
+
+  // 頁尾：資料來源、Logo
+  ctx.fillStyle = C.line; ctx.fillRect(M, H - 130, W - M * 2, 2);
+  ctx.fillStyle = C.grey; ctx.font = font(500, 26); ctx.textAlign = "left"; ctx.textBaseline = "middle";
+  ctx.fillText(ellipsis(ctx, dataState.source, W - M * 2 - (logoImg ? 300 : 0)), M, H - 74);
+  drawLogo(ctx, W, H, 46);
+
+  if (dataState.demo) {
+    ctx.save(); ctx.translate(W / 2, H / 2); ctx.rotate(-Math.PI / 8);
+    ctx.fillStyle = "rgba(200,40,40,.16)"; ctx.font = font(900, 220); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("範例", 0, 0); ctx.restore();
+  }
+}
+const renderDataSoon = debounce(renderData, 120);
+
+function syncDataOpts(){
+  const box = $("dSet").value === "box";
+  $("boxOpts").hidden = !box; $("conOpts").hidden = box;
+}
+$("dSet").addEventListener("change", syncDataOpts);
+["dLabel", "dTitle", "dSubtitle"].forEach(id => $(id).addEventListener("input", renderDataSoon));
+$("dSize").addEventListener("change", renderData);
+$("dConView").addEventListener("change", () => { if (concertCache && $("dSet").value === "concert") { try { concertView(); renderData(); } catch(e){ setSt($("dStatus"), e.message, true); } } });
+$("dGo").onclick = async () => {
+  $("dGo").disabled = true; setSt($("dStatus"), "抓取中，第一次可能要 10 到 60 秒。");
+  try {
+    if ($("dSet").value === "box") await fetchBox(); else await fetchConcert();
+    await renderData();
+    setSt($("dStatus"), "完成。標題和副標可以直接修改。");
+  } catch(e) { setSt($("dStatus"), e.message, true); }
+  finally { $("dGo").disabled = false; }
+};
+$("dDownload").onclick = async () => {
+  if (dataState && dataState.demo) { setSt($("dStatus"), "目前是範例資料，請先按「抓取資料」再下載。", true); return; }
+  await renderData(); download(dv, `數據圖卡-${stamp()}.png`);
+};
+
+// ---------- 啟動 ----------
+window.onStudioShow = id => { if (id === "card") renderCard(); else renderData(); };
+updateLimits(); syncDataOpts(); demoState();
+let saved = null; try { saved = localStorage.getItem("qq15-logo"); } catch(e){}
+if (saved) setLogo(saved, false);
+if (current.studio) window.onStudioShow(current.id);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { drawCard(); drawData(); });
+})();
 </script>
 </body>
 </html>
