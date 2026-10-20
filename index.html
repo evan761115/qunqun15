@@ -61,7 +61,7 @@ input:focus-visible,textarea:focus-visible,button:focus-visible{outline:3px soli
 [hidden]{display:none!important}
 
 /* ---- 圖卡工作室（新聞圖卡、數據圖卡）：左邊設定，右邊即時預覽 ---- */
-.tab.studio{border-style:dashed}
+.tab.tab-studio{border-style:dashed}
 .tab-sep{width:1px;background:var(--line);margin-inline:4px}
 .studio{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:18px;padding-bottom:48px;align-items:start}
 @media (max-width:900px){.studio{grid-template-columns:minmax(0,1fr)}}
@@ -90,6 +90,15 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
 th{background:var(--bg);font-weight:700}
 .logo-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .logo-row img{height:34px;width:auto;background:#fff;border:1px solid var(--line);border-radius:4px;padding:3px}
+#conTable input[type=text],#conTable input[type=date]{padding:4px 6px;font-size:.85rem;min-width:0}
+#conTable input[type=date]{width:9.5em}
+#conTable input[id^="con-art-"]{width:11em}
+#conTable input[id^="con-ven-"]{width:10em}
+#conTable input[type=checkbox]{width:auto}
+#conTable .ghost{padding:3px 8px;font-size:.8rem}
+#conEdit{display:grid;gap:8px}
+#conEdit .tablewrap{max-height:460px;overflow:auto}
+#conTable th{position:sticky;top:0;z-index:1}
 </style>
 </head>
 <body>
@@ -240,12 +249,12 @@ th{background:var(--bg);font-weight:700}
   <main class="studio" id="deskData" hidden>
     <section class="pane">
       <h2>數據圖卡</h2>
-      <p class="what">從政府開放資料抓全國電影票房、演唱會資訊，做成社群用的排行圖，並標上資料來源。</p>
+      <p class="what">全國電影票房（週、月、年排行）與演唱會月曆，資料來自政府開放資料，圖上會自動標出來源。</p>
 
       <div class="grid2">
         <div class="field">
           <label for="dSet">資料</label>
-          <select id="dSet"><option value="box">全國電影票房</option><option value="concert">演唱會資訊</option></select>
+          <select id="dSet"><option value="box">全國電影票房</option><option value="concert">演唱會月曆</option></select>
         </div>
         <div class="field">
           <label for="dSize">圖卡尺寸</label>
@@ -253,45 +262,56 @@ th{background:var(--bg);font-weight:700}
         </div>
       </div>
 
-      <div class="grid2" id="boxOpts">
+      <!-- 票房選項 -->
+      <div id="boxOpts" class="grid2">
         <div class="field">
-          <label for="dBoxMode">範圍</label>
-          <select id="dBoxMode">
-            <option value="week">上週週票房</option>
-            <option value="recent">近 5 週上映・累計票房</option>
-            <option value="year">今年上映・累計票房</option>
-          </select>
+          <label for="dBoxMode">統計期間</label>
+          <select id="dBoxMode"><option value="week">週票房</option><option value="month">月票房</option><option value="year">年度票房</option></select>
+        </div>
+        <div class="field" id="wWeek">
+          <label for="dWeek">哪一週（選該週任一天）</label>
+          <input id="dWeek" type="date">
+        </div>
+        <div class="field" id="wMonth" hidden>
+          <label for="dMonth">哪個月</label>
+          <input id="dMonth" type="month">
+        </div>
+        <div class="field" id="wYear" hidden>
+          <label for="dYear">哪一年</label>
+          <select id="dYear"></select>
         </div>
         <div class="field">
-          <label for="dBoxMetric">數值</label>
+          <label for="dBoxMetric">排行依據</label>
           <select id="dBoxMetric"><option value="amount">票房金額</option><option value="tickets">觀影人次</option></select>
         </div>
-      </div>
-
-      <div class="grid2" id="conOpts" hidden>
-        <div class="field">
-          <label for="dConDays">期間</label>
-          <select id="dConDays"><option value="30">未來 30 天</option><option value="60" selected>未來 60 天</option><option value="90">未來 90 天</option></select>
-        </div>
-        <div class="field">
-          <label for="dConView">圖表</label>
-          <select id="dConView">
-            <option value="city">各縣市場次</option>
-            <option value="month">各月份場次</option>
-            <option value="venue">熱門場館場次</option>
-            <option value="list">近期演唱會一覽</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="grid2">
         <div class="field">
           <label for="dCount">顯示筆數</label>
           <select id="dCount"><option value="5">前 5 名</option><option value="8">前 8 名</option><option value="10" selected>前 10 名</option></select>
         </div>
-        <div class="field" style="align-content:end">
-          <button class="btn" id="dGo" type="button">抓取資料</button>
+      </div>
+
+      <!-- 演唱會選項 -->
+      <div id="conOpts" class="grid2" hidden>
+        <div class="field">
+          <label for="dConMonth">月份</label>
+          <input id="dConMonth" type="month">
         </div>
+        <div class="field">
+          <label for="dConView">版面</label>
+          <select id="dConView"><option value="cal">月曆</option><option value="list">清單（依日期，可分頁）</option></select>
+        </div>
+        <div class="field" id="wPage" hidden>
+          <label for="dPage">清單頁數</label>
+          <select id="dPage"></select>
+        </div>
+        <div class="field" style="align-content:end">
+          <label class="lim" style="display:flex;gap:6px;align-items:center;font-size:.9rem"><input id="dAi" type="checkbox" checked style="width:auto">用 AI 把活動名稱縮成藝人名</label>
+        </div>
+      </div>
+
+      <div class="bar">
+        <span class="count" id="dHint">抓取後可在下方核對、修改資料</span>
+        <button class="btn" id="dGo" type="button">抓取資料</button>
       </div>
       <p class="status" id="dStatus" role="status"></p>
 
@@ -309,8 +329,17 @@ th{background:var(--bg);font-weight:700}
         <input id="dSubtitle" type="text" autocomplete="off">
       </div>
 
-      <p class="sub">資料內容（核對用）</p>
-      <div class="tablewrap"><table id="dTable"></table></div>
+      <div id="conEdit" hidden>
+        <p class="sub">演唱會場次（可修改、補登）</p>
+        <p class="hint">文化部資料由主辦單位自行登錄，大型演唱會常常沒有。缺的場次按「新增一場」補上，你補登的場次會記在這台電腦的瀏覽器。取消勾選的場次不會畫進圖卡。</p>
+        <div class="tablewrap"><table id="conTable"></table></div>
+        <div class="bar"><span class="count" id="conCount"></span><button class="ghost" id="conAdd" type="button">新增一場</button></div>
+      </div>
+
+      <div id="boxCheck">
+        <p class="sub">資料內容（核對用）</p>
+        <div class="tablewrap"><table id="dTable"></table></div>
+      </div>
       <p class="hint" id="dNote"></p>
     </section>
 
@@ -320,7 +349,7 @@ th{background:var(--bg);font-weight:700}
         <button class="btn" id="dDownload" type="button">下載圖卡 PNG</button>
       </div>
       <canvas id="dCanvas" width="1080" height="1080" aria-label="數據圖卡預覽"></canvas>
-      <p class="remind">Logo 在「新聞圖卡」分頁上傳，兩邊共用。</p>
+      <p class="remind">Logo 在「新聞圖卡」分頁上傳，兩邊共用。月曆建議用 4:5，格子比較大。</p>
     </section>
   </main>
 </div>
@@ -389,7 +418,7 @@ function renderTabs(){
   $("tabs").innerHTML = "";
   const add = t => {
     const b = document.createElement("button");
-    b.className = "tab" + (t.studio ? " studio" : ""); b.type = "button"; b.textContent = t.name;
+    b.className = "tab" + (t.studio ? " tab-studio" : ""); b.type = "button"; b.textContent = t.name;
     b.setAttribute("role","tab"); b.setAttribute("aria-selected", t === current);
     b.onclick = () => selectTool(t);
     $("tabs").appendChild(b);
@@ -733,11 +762,15 @@ $("cDownload").onclick = async () => { await renderCard(); download(cv, `新聞�
 
 // =========================== 數據圖卡 ===========================
 const dv = $("dCanvas"), dx = dv.getContext("2d");
-let dataState = null; // { kind:"bars"|"list", rows:[{label, value, valueText, sub}], source, demo }
-let concertCache = null;
+let dataState = null; // 票房：{ kind:"bars", rows, source, demo }；演唱會：{ kind:"cal"|"list", ... }
+let boxData = null;
+let conFetched = [];   // 文化部抓回來的場次（含 AI 縮好的藝人名、是否勾選）
+let conManual = [];    // 手動補登的場次（記在瀏覽器）
+let conMonthKey = "";  // 目前載入的月份 2026-11
+const WEEK = "日一二三四五六";
 
 function fmtMoney(v){
-  if (v >= 1e8) return (v / 1e8).toFixed(v >= 1e9 ? 1 : 2).replace(/\.?0+$/, "") + "億";
+  if (v >= 1e8) return (v / 1e8).toFixed(2).replace(/\.?0+$/, "") + "億";
   if (v >= 1e4) return Math.round(v / 1e4).toLocaleString("zh-TW") + "萬";
   return Math.round(v).toLocaleString("zh-TW");
 }
@@ -747,7 +780,7 @@ function fmtCount(v){
 }
 function md(d){ const [, m, dd] = d.split("-"); return `${+m}/${+dd}`; }
 function ymd(d){ return d.replace(/-/g, "/"); }
-const WEEK = "日一二三四五六";
+function todayStr(){ const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
 
 function renderTable(head, rows){
   const t = $("dTable"); t.innerHTML = "";
@@ -756,97 +789,164 @@ function renderTable(head, rows){
   t.appendChild(tr);
   rows.forEach(r => {
     const tr2 = document.createElement("tr");
-    r.forEach((c, i) => { const td = document.createElement("td"); td.textContent = c; if (typeof c === "number" || /^[\d,.]+(萬|億)?$/.test(String(c))) td.className = "n"; tr2.appendChild(td); });
+    r.forEach(c => { const td = document.createElement("td"); td.textContent = c; if (typeof c === "number" || /^[\d,.%-]+(萬|億)?$/.test(String(c))) td.className = "n"; tr2.appendChild(td); });
     t.appendChild(tr2);
   });
 }
 
+// ---------- 票房 ----------
 function demoState(){
   $("dLabel").value = "票房快報"; $("dTitle").value = "全台電影週票房 TOP 5"; $("dSubtitle").value = "範例資料，按「抓取資料」換成最新數字";
   dataState = { kind: "bars", demo: true, source: "資料來源：國家電影及視聽文化中心 全國電影票房統計",
     rows: [["範例電影 A", 52300000], ["範例電影 B", 31800000], ["範例電影 C", 18450000], ["範例電影 D", 9620000], ["範例電影 E", 4210000]]
       .map(([label, value]) => ({ label, value, valueText: fmtMoney(value) })) };
   renderTable(["排名", "片名", "金額"], dataState.rows.map((r, i) => [i + 1, r.label, r.valueText]));
-  $("dNote").textContent = "目前是範例資料，圖上會打上「範例」浮水印。";
+  $("dNote").textContent = "目前是範例資料，圖上會打上「範例」浮水印，也不能下載。";
 }
-
-async function fetchBox(){
-  const mode = $("dBoxMode").value, n = +$("dCount").value, metric = $("dBoxMetric").value;
-  const data = await callBackend(`/api/data/boxoffice?mode=${mode}&size=${n}`);
-  const items = data.items || [];
-  if (!items.length) throw new Error("這個範圍沒有票房資料。");
-  const isWeek = mode === "week";
-  const val = f => metric === "tickets" ? (isWeek ? f.tickets : f.totalTickets) : (isWeek ? f.amount : f.totalAmount);
-  const sorted = items.slice().sort((a, b) => val(b) - val(a));
-  const unit = metric === "tickets" ? "觀影人次" : "票房";
-  const titles = {
-    week: [`全台電影週票房 TOP ${sorted.length}`, `${ymd(data.start)}–${md(data.end)}｜${metric === "tickets" ? "單位：人次" : "單位：新台幣"}`],
-    recent: [`近期上映電影累計${unit} TOP ${sorted.length}`, `${md(data.start)} 後上映｜統計至 ${ymd(data.end)}`],
-    year: [`${data.end.slice(0, 4)} 年上映電影累計${unit} TOP ${sorted.length}`, `統計至 ${ymd(data.end)}`]
-  }[mode];
-  $("dLabel").value = metric === "tickets" ? "觀影人次" : "票房快報"; $("dTitle").value = titles[0]; $("dSubtitle").value = titles[1];
+function syncBoxPickers(){
+  const m = $("dBoxMode").value;
+  $("wWeek").hidden = m !== "week"; $("wMonth").hidden = m !== "month"; $("wYear").hidden = m !== "year";
+}
+async function fetchBoxData(){
+  const mode = $("dBoxMode").value, metric = $("dBoxMetric").value, n = +$("dCount").value;
+  const start = mode === "week" ? ($("dWeek").value || "") : mode === "month" ? ($("dMonth").value ? $("dMonth").value + "-01" : "") : ($("dYear").value + "-01-01");
+  boxData = await callBackend(`/api/data/boxoffice?mode=${mode}&metric=${metric}&size=${n}` + (start ? `&start=${start}` : ""));
+  buildBox();
+}
+function buildBox(){
+  const d = boxData; if (!d) return;
+  const items = (d.items || []).slice(0, +$("dCount").value);
+  if (!items.length) throw new Error("這段期間沒有票房資料。");
+  const tickets = d.metric === "tickets";
+  const val = f => tickets ? f.tickets : f.amount;
+  const partial = d.cutoff && d.cutoff < d.end;
+  const range = d.mode === "week" ? `${ymd(d.start)}–${md(d.end)}`
+    : d.mode === "month" ? `${d.start.slice(0, 4)}年${+d.start.slice(5, 7)}月${partial ? `（統計至 ${md(d.cutoff)}）` : ""}`
+    : `${d.start.slice(0, 4)}年${partial ? `（統計至 ${md(d.cutoff)}）` : "全年"}`;
+  const total = tickets ? `全台合計 ${fmtCount(d.summary.totalTickets)}人次` : `全台總票房 ${fmtMoney(d.summary.totalAmount)}`;
+  const period = { week: "週", month: `${+d.start.slice(5, 7)}月`, year: `${d.start.slice(0, 4)}年度` }[d.mode];
+  $("dLabel").value = tickets ? "觀影人次" : "票房快報";
+  $("dTitle").value = d.mode === "week" ? `全台電影週${tickets ? "觀影人次" : "票房"} TOP ${items.length}` : `${period}電影${tickets ? "觀影人次" : "票房"} TOP ${items.length}`;
+  $("dSubtitle").value = `${range}｜${total}`;
   dataState = { kind: "bars", demo: false, source: "資料來源：國家電影及視聽文化中心 全國電影票房統計",
-    rows: sorted.map(f => ({ label: f.name, value: val(f), valueText: metric === "tickets" ? fmtCount(val(f)) + "人次" : fmtMoney(val(f)) })) };
-  renderTable(["排名", "片名", "上映日", "國別", isWeek ? "週金額" : "累計金額", isWeek ? "週人次" : "累計人次"],
-    sorted.map((f, i) => [i + 1, f.name, f.releaseDate, f.country, (isWeek ? f.amount : f.totalAmount).toLocaleString("zh-TW"), (isWeek ? f.tickets : f.totalTickets).toLocaleString("zh-TW")]));
-  $("dNote").textContent = isWeek ? "週票房為全國戲院該週銷售加總，戲院每週一上傳上週數字，公布後才會更新。" : "累計票房為上映至今的全國銷售加總。";
+    rows: items.map(f => ({ label: f.name, value: val(f), valueText: tickets ? fmtCount(val(f)) + "人次" : fmtMoney(val(f)) })) };
+  const head = d.mode === "week" ? ["排名", "片名", "上映日", "國別", "週金額", "週人次", "較上週", "累計金額"]
+    : ["排名", "片名", "上映日", "國別", "期間金額", "期間人次", "累計金額"];
+  renderTable(head, items.map((f, i) => {
+    const r = [i + 1, f.name, f.releaseDate, f.country, f.amount.toLocaleString("zh-TW"), f.tickets.toLocaleString("zh-TW")];
+    if (d.mode === "week") r.push(f.amountRate === null ? "" : (f.amountRate * 100).toFixed(1) + "%");
+    r.push(f.totalAmount.toLocaleString("zh-TW"));
+    return r;
+  }));
+  const notes = [];
+  if (d.fallback) notes.push(`你選的那一週還沒公布，先顯示最近已公布的 ${ymd(d.start)}–${md(d.end)}。`);
+  if (partial) notes.push(`這段期間還沒結束，數字統計到 ${ymd(d.cutoff)}（最近一次公布）。`);
+  notes.push("票房由全國戲院每週一上傳上週數字，經電影中心整理後公布。");
+  $("dNote").textContent = notes.join("");
 }
 
-function concertView(){
-  const d = concertCache; if (!d) return;
-  const view = $("dConView").value, n = +$("dCount").value, days = $("dConDays").value;
-  const shows = d.shows || [];
-  const range = `${md(d.from)}–${md(d.to)}`;
-  const src = "資料來源：文化部文化資料開放服務網（演唱會類別）";
-  if (!shows.length) throw new Error("這段期間文化部資料裡沒有演唱會場次。");
-  const countBy = keyFn => { const m = new Map(); shows.forEach(s => { const k = keyFn(s); if (k) m.set(k, (m.get(k) || 0) + 1); }); return [...m.entries()]; };
+// ---------- 演唱會 ----------
+function loadManual(){ try { conManual = JSON.parse(localStorage.getItem("qq15-concerts") || "[]"); } catch(e){ conManual = []; } }
+function saveManual(){ try { localStorage.setItem("qq15-concerts", JSON.stringify(conManual)); } catch(e){} }
+function monthEntries(){
+  const key = $("dConMonth").value;
+  const all = conFetched.filter(r => r.date.startsWith(key)).concat(conManual.filter(r => (r.date || "").startsWith(key)));
+  return all.filter(r => r.on !== false && r.artist).sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
+}
+function renderConTable(){
+  const key = $("dConMonth").value, t = $("conTable"); t.innerHTML = "";
+  const rows = conFetched.filter(r => r.date.startsWith(key)).map(r => ({ r, src: "文化部" }))
+    .concat(conManual.filter(r => (r.date || "").startsWith(key)).map(r => ({ r, src: "補登" })))
+    .sort((a, b) => (a.r.date + (a.r.time || "")).localeCompare(b.r.date + (b.r.time || "")));
+  const tr = document.createElement("tr");
+  ["顯示", "日期", "藝人（圖上文字）", "場館", "來源", ""].forEach(h => { const th = document.createElement("th"); th.textContent = h; tr.appendChild(th); });
+  t.appendChild(tr);
+  rows.forEach(({ r, src }, idx) => {
+    const tr2 = document.createElement("tr");
+    const cell = el => { const td = document.createElement("td"); td.appendChild(el); tr2.appendChild(td); return td; };
+    const on = document.createElement("input"); on.type = "checkbox"; on.checked = r.on !== false; on.id = `con-on-${idx}`; on.setAttribute("aria-label", "畫進圖卡");
+    on.onchange = () => { r.on = on.checked; if (src === "補登") saveManual(); conChanged(); };
+    cell(on);
+    const date = document.createElement("input"); date.type = "date"; date.value = r.date || ""; date.id = `con-date-${idx}`; date.setAttribute("aria-label", "日期");
+    date.onchange = () => { r.date = date.value; if (src === "補登") saveManual(); conChanged(true); };
+    cell(date);
+    const art = document.createElement("input"); art.type = "text"; art.value = r.artist || ""; art.id = `con-art-${idx}`; art.setAttribute("aria-label", "藝人");
+    art.title = r.title || ""; art.oninput = () => { r.artist = art.value; if (src === "補登") saveManual(); conChangedSoon(); };
+    cell(art);
+    const ven = document.createElement("input"); ven.type = "text"; ven.value = r.venue || ""; ven.id = `con-ven-${idx}`; ven.setAttribute("aria-label", "場館");
+    ven.oninput = () => { r.venue = ven.value; if (src === "補登") saveManual(); conChangedSoon(); };
+    cell(ven);
+    const s = document.createElement("span"); s.textContent = src; s.className = "lim"; cell(s);
+    if (src === "補登") {
+      const del = document.createElement("button"); del.type = "button"; del.className = "ghost"; del.textContent = "刪除";
+      del.onclick = () => { conManual = conManual.filter(x => x !== r); saveManual(); conChanged(true); };
+      cell(del);
+    } else cell(document.createTextNode(""));
+    t.appendChild(tr2);
+  });
+  const shown = monthEntries().length;
+  $("conCount").textContent = `本月 ${rows.length} 場，圖上顯示 ${shown} 場`;
+}
+function buildConcert(){
+  const key = $("dConMonth").value; if (!key) return;
+  const [y, m] = key.split("-").map(Number);
+  const entries = monthEntries();
+  const view = $("dConView").value;
   $("dLabel").value = "演唱會";
-  if (view === "list") {
-    const seen = new Set(), rows = [];
-    for (const s of shows) { const k = s.title + s.date + s.venue; if (seen.has(k)) continue; seen.add(k); rows.push(s); if (rows.length >= n) break; }
-    $("dTitle").value = "近期演唱會一覽"; $("dSubtitle").value = `${range}｜依日期排序`;
-    dataState = { kind: "list", demo: false, source: src,
-      rows: rows.map(s => ({ date: s.date, label: s.title, sub: [s.venue, s.city !== "其他" ? s.city : ""].filter(Boolean).join("｜"), time: s.time })) };
-    renderTable(["日期", "時間", "演出", "場館", "縣市"], rows.map(s => [s.date, s.time, s.title, s.venue, s.city]));
+  const hasGov = conFetched.length > 0 && conMonthKey === key;
+  const src = hasGov ? "資料來源：文化部文化資料開放服務網、編輯部整理" : "資料來源：編輯部整理";
+  if (view === "cal") {
+    $("dTitle").value = `${y}年${m}月 演唱會行事曆`;
+    $("dSubtitle").value = `共 ${entries.length} 場｜場次以主辦單位公告為準`;
+    dataState = { kind: "cal", demo: false, source: src, year: y, month: m, entries };
   } else {
-    let pairs;
-    if (view === "city") { pairs = countBy(s => s.city).sort((a, b) => b[1] - a[1]); $("dTitle").value = `未來 ${days} 天演唱會 各縣市場次`; }
-    if (view === "venue") { pairs = countBy(s => s.venue).sort((a, b) => b[1] - a[1]); $("dTitle").value = `演唱會熱門場館 TOP ${Math.min(n, pairs.length)}`; }
-    if (view === "month") {
-      pairs = countBy(s => s.date.slice(0, 7)).sort((a, b) => a[0].localeCompare(b[0]))
-        .map(([k, v], i, arr) => [(arr[0][0].slice(0, 4) !== arr[arr.length - 1][0].slice(0, 4) ? k.slice(0, 4) + "年" : "") + (+k.slice(5)) + "月", v]);
-      $("dTitle").value = "各月份演唱會場次";
-    }
-    pairs = pairs.slice(0, n);
-    $("dSubtitle").value = `${range}｜共 ${shows.length} 場`;
-    dataState = { kind: "bars", demo: false, source: src, keepOrder: view === "month",
-      rows: pairs.map(([label, value]) => ({ label, value, valueText: value + " 場" })) };
-    renderTable(["項目", "場次"], pairs.map(([l, v]) => [l, v]));
+    const per = +$("dSize").value === 1350 ? 10 : 8;
+    const pages = Math.max(1, Math.ceil(entries.length / per));
+    const sel = $("dPage"), cur = Math.min(+sel.value || 1, pages);
+    sel.innerHTML = ""; for (let i = 1; i <= pages; i++) { const o = document.createElement("option"); o.value = i; o.textContent = `第 ${i} 頁／共 ${pages} 頁`; sel.appendChild(o); }
+    sel.value = cur;
+    $("dTitle").value = `${m}月演唱會一覽` + (pages > 1 ? `（${cur}/${pages}）` : "");
+    $("dSubtitle").value = `${y}年${m}月｜共 ${entries.length} 場，依日期排序`;
+    dataState = { kind: "list", demo: false, source: src,
+      rows: entries.slice((cur - 1) * per, cur * per).map(s => ({ date: s.date, time: s.time, label: s.artist, sub: [s.venue, s.city && s.city !== "其他" ? s.city : ""].filter(Boolean).join("｜") })) };
   }
-  $("dNote").textContent = `文化部資料由主辦單位自行登錄，未必涵蓋所有演唱會；本次期間內共 ${shows.length} 場、原始資料 ${d.events} 筆活動。`;
 }
-async function fetchConcert(){
-  concertCache = await callBackend(`/api/data/concerts?days=${$("dConDays").value}`);
-  concertView();
+function conChanged(rebuildTable){ if (rebuildTable) renderConTable(); else $("conCount").textContent = `圖上顯示 ${monthEntries().length} 場`; buildConcert(); renderData(); }
+const conChangedSoon = debounce(() => conChanged(false), 200);
+
+async function fetchConcertData(){
+  const key = $("dConMonth").value;
+  if (!key) throw new Error("請先選月份。");
+  const d = await callBackend(`/api/data/concerts?month=${key}`);
+  const shows = d.shows || [];
+  conFetched = shows.map(s => ({ ...s, artist: s.title, on: true }));
+  conMonthKey = key;
+  if (shows.length && $("dAi").checked) {
+    setSt($("dStatus"), `抓到 ${shows.length} 場，AI 正在把活動名稱縮成藝人名…`);
+    try {
+      const uniq = [...new Set(shows.map(s => s.title))];
+      const r = await callBackend("/api/artists", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ titles: uniq }) });
+      const map = new Map(uniq.map((t, i) => [t, (r.artists || [])[i] || ""]));
+      conFetched.forEach(s => { const a = map.get(s.title); if (a) s.artist = a; });
+    } catch(e) { setSt($("dStatus"), "AI 縮名失敗，先用原本的活動名稱：" + e.message, true); }
+  }
+  renderConTable(); buildConcert();
+  $("dNote").textContent = shows.length
+    ? `文化部資料本月有 ${shows.length} 場。藝人名稱是 AI 從活動名稱整理的，請在上方表格核對。`
+    : "文化部資料這個月沒有演唱會場次，可以用「新增一場」自己補登。";
 }
 
+// ---------- 畫圖 ----------
 async function renderData(){
   if (!dataState) return;
-  const texts = [$("dLabel").value, $("dTitle").value, $("dSubtitle").value, dataState.source, "範例"]
-    .concat(dataState.rows.map(r => (r.label || "") + (r.valueText || "") + (r.sub || "") + (r.time || "")));
+  const texts = [$("dLabel").value, $("dTitle").value, $("dSubtitle").value, dataState.source, "範例日一二三四五六週場"];
+  if (dataState.rows) dataState.rows.forEach(r => texts.push((r.label || "") + (r.valueText || "") + (r.sub || "") + (r.time || "")));
+  if (dataState.entries) dataState.entries.forEach(e => texts.push(e.artist || ""));
   await ensureFonts(texts);
   drawData();
 }
-function drawData(){
-  if (!dataState) return;
-  const W = 1080, H = +$("dSize").value, ctx = dx;
-  if (dv.height !== H) dv.height = H;
-  ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = C.white; ctx.fillRect(0, 0, W, H);
-  const M = 72;
-
-  // 標頭：標籤、標題、副標
-  let y = 70;
+function drawHeader(ctx, W, M){
+  let y = 64;
   const label = $("dLabel").value.trim();
   if (label) {
     ctx.font = font(900, 30); const lw = ctx.measureText(label).width + 36;
@@ -856,71 +956,127 @@ function drawData(){
   }
   const title = $("dTitle").value.trim();
   ctx.fillStyle = C.ink; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
-  fitFont(ctx, title, 900, 66, 40, W - M * 2); ctx.fillText(title, M, y + 58);
-  y += 80;
+  fitFont(ctx, title, 900, 64, 38, W - M * 2); ctx.fillText(title, M, y + 56);
+  y += 76;
   const sub = $("dSubtitle").value.trim();
-  if (sub) { ctx.fillStyle = C.grey; ctx.font = font(500, 32); ctx.fillText(ellipsis(ctx, sub, W - M * 2), M, y + 36); y += 50; }
-  y += 30;
+  if (sub) { ctx.fillStyle = C.grey; ctx.font = font(500, 30); ctx.fillText(ellipsis(ctx, sub, W - M * 2), M, y + 34); y += 46; }
+  y += 26;
   ctx.fillStyle = C.ink; ctx.fillRect(M, y, W - M * 2, 4);
-  y += 36;
-
-  // 頁尾區域
-  const footTop = H - 150;
-  const rows = dataState.rows;
-  const areaH = footTop - y;
-
-  if (dataState.kind === "bars") {
-    const rh = Math.min(areaH / Math.max(rows.length, 1), 128);
-    const max = Math.max(...rows.map(r => r.value), 1);
-    const labelPx = rh >= 100 ? 34 : rh >= 80 ? 30 : 26;
-    const barH = Math.max(14, Math.min(28, rh * 0.24));
-    const rankW = 64, barX = M + rankW, barMax = W - M - barX - 190;
-    rows.forEach((r, i) => {
-      const top = y + i * rh;
-      // 名次
-      ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillStyle = i === 0 && !dataState.keepOrder ? C.ink : C.grey;
-      ctx.font = font(900, Math.round(labelPx * 1.25));
-      ctx.fillText(dataState.keepOrder ? "" : String(i + 1), M + rankW / 2 - 8, top + rh * 0.5);
-      // 名稱
-      ctx.textAlign = "left"; ctx.textBaseline = "alphabetic"; ctx.fillStyle = C.ink; ctx.font = font(700, labelPx);
-      const lx = dataState.keepOrder ? M : barX;
-      ctx.fillText(ellipsis(ctx, r.label, W - M - lx), lx, top + rh * 0.42);
-      // 長條
-      const bx = dataState.keepOrder ? M : barX, bmax = dataState.keepOrder ? barMax + rankW : barMax;
-      const by = top + rh * 0.56, bw = Math.max(8, bmax * (r.value / max));
-      ctx.fillStyle = C.track; roundRect(ctx, bx, by, bmax, barH, barH / 2); ctx.fill();
-      ctx.fillStyle = C.yellow; roundRect(ctx, bx, by, bw, barH, barH / 2); ctx.fill();
-      // 數值
-      ctx.fillStyle = C.ink; ctx.font = font(900, Math.round(labelPx * 0.95)); ctx.textBaseline = "middle";
-      ctx.fillText(r.valueText, bx + bmax + 20, by + barH / 2);
-    });
-  } else {
-    const rh = Math.min(areaH / Math.max(rows.length, 1), 120);
-    const tPx = rh >= 100 ? 34 : rh >= 80 ? 30 : 26;
-    rows.forEach((r, i) => {
-      const top = y + i * rh;
-      const [yy, mm, dd] = r.date.split("-").map(Number);
-      const wd = WEEK[new Date(Date.UTC(yy, mm - 1, dd)).getUTCDay()];
-      const boxW = 150, boxH = Math.min(rh - 18, 88);
-      ctx.fillStyle = C.yellow; roundRect(ctx, M, top + (rh - boxH) / 2, boxW, boxH, 8); ctx.fill();
-      ctx.fillStyle = C.ink; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.font = font(900, Math.round(boxH * 0.4)); ctx.fillText(`${mm}/${dd}`, M + boxW / 2, top + rh / 2 - boxH * 0.12);
-      ctx.font = font(700, Math.round(boxH * 0.24)); ctx.fillText(`週${wd}${r.time ? " " + r.time : ""}`, M + boxW / 2, top + rh / 2 + boxH * 0.28);
-      const tx = M + boxW + 28, tw = W - M - tx;
-      ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
-      ctx.font = font(700, tPx); ctx.fillText(ellipsis(ctx, r.label, tw), tx, top + rh / 2 - 2);
-      ctx.fillStyle = C.grey; ctx.font = font(500, Math.round(tPx * 0.78)); ctx.fillText(ellipsis(ctx, r.sub || "", tw), tx, top + rh / 2 + tPx * 0.95);
-      if (i < rows.length - 1) { ctx.fillStyle = C.line; ctx.fillRect(tx, top + rh - 1, tw, 2); }
-    });
-  }
-
-  // 頁尾：資料來源、Logo
-  ctx.fillStyle = C.line; ctx.fillRect(M, H - 130, W - M * 2, 2);
+  return y + 4;
+}
+function drawFooter(ctx, W, H, M){
+  ctx.fillStyle = C.line; ctx.fillRect(M, H - 118, W - M * 2, 2);
   ctx.fillStyle = C.grey; ctx.font = font(500, 26); ctx.textAlign = "left"; ctx.textBaseline = "middle";
-  ctx.fillText(ellipsis(ctx, dataState.source, W - M * 2 - (logoImg ? 300 : 0)), M, H - 74);
-  drawLogo(ctx, W, H, 46);
-
+  ctx.fillText(ellipsis(ctx, dataState.source, W - M * 2 - (logoImg ? 300 : 0)), M, H - 64);
+  drawLogo(ctx, W, H, 36);
+}
+function drawBars(ctx, W, y, bottom, M){
+  const rows = dataState.rows;
+  y += 30;
+  const areaH = bottom - y;
+  const rh = Math.min(areaH / Math.max(rows.length, 1), 128);
+  const max = Math.max(...rows.map(r => r.value), 1);
+  const labelPx = rh >= 100 ? 34 : rh >= 80 ? 30 : 26;
+  const barH = Math.max(14, Math.min(28, rh * 0.24));
+  const rankW = 64, barX = M + rankW, barMax = W - M - barX - 190;
+  rows.forEach((r, i) => {
+    const top = y + i * rh;
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillStyle = i === 0 ? C.ink : C.grey;
+    ctx.font = font(900, Math.round(labelPx * 1.25));
+    ctx.fillText(String(i + 1), M + rankW / 2 - 8, top + rh * 0.5);
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic"; ctx.fillStyle = C.ink; ctx.font = font(700, labelPx);
+    ctx.fillText(ellipsis(ctx, r.label, W - M - barX), barX, top + rh * 0.42);
+    const by = top + rh * 0.56, bw = Math.max(8, barMax * (r.value / max));
+    ctx.fillStyle = C.track; roundRect(ctx, barX, by, barMax, barH, barH / 2); ctx.fill();
+    ctx.fillStyle = C.yellow; roundRect(ctx, barX, by, bw, barH, barH / 2); ctx.fill();
+    ctx.fillStyle = C.ink; ctx.font = font(900, Math.round(labelPx * 0.95)); ctx.textBaseline = "middle";
+    ctx.fillText(r.valueText, barX + barMax + 20, by + barH / 2);
+  });
+}
+function drawList(ctx, W, y, bottom, M){
+  const rows = dataState.rows;
+  y += 24;
+  if (!rows.length) { ctx.fillStyle = C.grey; ctx.font = font(700, 34); ctx.textAlign = "center"; ctx.fillText("這個月還沒有場次", W / 2, (y + bottom) / 2); return; }
+  const rh = Math.min((bottom - y) / rows.length, 112);
+  const tPx = rh >= 100 ? 34 : rh >= 80 ? 30 : 26;
+  rows.forEach((r, i) => {
+    const top = y + i * rh;
+    const [yy, mm, dd] = r.date.split("-").map(Number);
+    const wd = WEEK[new Date(Date.UTC(yy, mm - 1, dd)).getUTCDay()];
+    const boxW = 150, boxH = Math.min(rh - 18, 88);
+    ctx.fillStyle = C.yellow; roundRect(ctx, M, top + (rh - boxH) / 2, boxW, boxH, 8); ctx.fill();
+    ctx.fillStyle = C.ink; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.font = font(900, Math.round(boxH * 0.4)); ctx.fillText(`${mm}/${dd}`, M + boxW / 2, top + rh / 2 - boxH * 0.12);
+    ctx.font = font(700, Math.round(boxH * 0.24)); ctx.fillText(`週${wd}${r.time ? " " + r.time : ""}`, M + boxW / 2, top + rh / 2 + boxH * 0.28);
+    const tx = M + boxW + 28, tw = W - M - tx;
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    ctx.font = font(900, tPx); ctx.fillText(ellipsis(ctx, r.label, tw), tx, top + rh / 2 - 2);
+    ctx.fillStyle = C.grey; ctx.font = font(500, Math.round(tPx * 0.78)); ctx.fillText(ellipsis(ctx, r.sub || "", tw), tx, top + rh / 2 + tPx * 0.95);
+    if (i < rows.length - 1) { ctx.fillStyle = C.line; ctx.fillRect(tx, top + rh - 1, tw, 2); }
+  });
+}
+function drawCalendar(ctx, W, y, bottom){
+  const { year, month, entries } = dataState;
+  const M = 40, gw = W - M * 2, cw = gw / 7;
+  y += 18;
+  // 星期列
+  const hh = 48;
+  WEEK.split("").forEach((d, i) => {
+    ctx.fillStyle = (i === 0 || i === 6) ? C.yellow : C.ink;
+    ctx.fillRect(M + i * cw + 2, y, cw - 4, hh);
+    ctx.fillStyle = (i === 0 || i === 6) ? C.ink : C.white;
+    ctx.font = font(900, 26); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(d, M + i * cw + cw / 2, y + hh / 2 + 1);
+  });
+  y += hh + 6;
+  const first = new Date(Date.UTC(year, month - 1, 1)).getUTCDay();
+  const days = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const weeks = Math.ceil((first + days) / 7);
+  const ch = (bottom - y - 8) / weeks;
+  const byDay = new Map();
+  entries.forEach(e => { const d = +e.date.slice(8, 10); if (!byDay.has(d)) byDay.set(d, []); byDay.get(d).push(e); });
+  const pillH = Math.max(24, Math.min(32, ch * 0.2)), gap = 5, px = Math.round(pillH * 0.66);
+  for (let w = 0; w < weeks; w++) {
+    for (let i = 0; i < 7; i++) {
+      const day = w * 7 + i - first + 1;
+      const x = M + i * cw, top = y + w * ch;
+      ctx.fillStyle = (i === 0 || i === 6) ? "#FBF6E4" : "#F7F7F5";
+      ctx.fillRect(x + 2, top + 2, cw - 4, ch - 4);
+      if (day < 1 || day > days) { ctx.fillStyle = C.white; ctx.fillRect(x + 2, top + 2, cw - 4, ch - 4); continue; }
+      const list = byDay.get(day) || [];
+      ctx.fillStyle = list.length ? C.ink : "#A8A8A8"; ctx.font = font(900, 26); ctx.textAlign = "left"; ctx.textBaseline = "top";
+      ctx.fillText(String(day), x + 12, top + 10);
+      const avail = ch - 46 - 6;
+      let cap = Math.max(0, Math.floor((avail + gap) / (pillH + gap)));
+      const show = list.length > cap ? Math.max(cap - 1, 0) : list.length;
+      for (let k = 0; k < show; k++) {
+        const py = top + 46 + k * (pillH + gap);
+        ctx.fillStyle = C.yellow; roundRect(ctx, x + 7, py, cw - 14, pillH, 6); ctx.fill();
+        ctx.fillStyle = C.ink; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        fitFont(ctx, list[k].artist, 900, px, 15, cw - 22);
+        ctx.fillText(ellipsis(ctx, list[k].artist, cw - 22), x + cw / 2, py + pillH / 2 + 1);
+      }
+      if (list.length > show) {
+        const py = top + 46 + show * (pillH + gap);
+        ctx.fillStyle = C.grey; ctx.font = font(700, px); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(`+${list.length - show} 場`, x + cw / 2, py + pillH / 2);
+      }
+    }
+  }
+}
+function drawData(){
+  if (!dataState) return;
+  const W = 1080, H = +$("dSize").value, ctx = dx, M = 72;
+  if (dv.height !== H) dv.height = H;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = C.white; ctx.fillRect(0, 0, W, H);
+  const y = drawHeader(ctx, W, M);
+  const bottom = H - 140;
+  if (dataState.kind === "bars") drawBars(ctx, W, y, bottom, M);
+  else if (dataState.kind === "list") drawList(ctx, W, y, bottom, M);
+  else drawCalendar(ctx, W, y, bottom);
+  drawFooter(ctx, W, H, M);
   if (dataState.demo) {
     ctx.save(); ctx.translate(W / 2, H / 2); ctx.rotate(-Math.PI / 8);
     ctx.fillStyle = "rgba(200,40,40,.16)"; ctx.font = font(900, 220); ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -929,31 +1085,60 @@ function drawData(){
 }
 const renderDataSoon = debounce(renderData, 120);
 
+// ---------- 控制項 ----------
 function syncDataOpts(){
   const box = $("dSet").value === "box";
   $("boxOpts").hidden = !box; $("conOpts").hidden = box;
+  $("conEdit").hidden = box; $("boxCheck").hidden = !box;
+  $("wPage").hidden = box || $("dConView").value !== "list";
+  $("dHint").textContent = box ? "抓取後可在下方核對數字" : "抓取後可在下方修改藝人名稱、補登場次";
+  if (box) { if (boxData) { buildBox(); } else demoState(); }
+  else { if (!$("dSize").dataset.touched) $("dSize").value = "1350"; renderConTable(); buildConcert(); }
+  renderData();
 }
+(function initPickers(){
+  const t = todayStr(), y = +t.slice(0, 4);
+  $("dWeek").value = t; $("dMonth").value = t.slice(0, 7);
+  for (let i = y; i >= 2017; i--) { const o = document.createElement("option"); o.value = i; o.textContent = `${i} 年`; $("dYear").appendChild(o); }
+  const next = new Date(); next.setMonth(next.getMonth() + 1);
+  $("dConMonth").value = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}`;
+})();
 $("dSet").addEventListener("change", syncDataOpts);
+$("dBoxMode").addEventListener("change", syncBoxPickers);
+$("dSize").addEventListener("change", () => { $("dSize").dataset.touched = "1"; if ($("dSet").value === "concert") buildConcert(); renderData(); });
+$("dCount").addEventListener("change", () => { if (boxData && $("dSet").value === "box") { try { buildBox(); renderData(); } catch(e){ setSt($("dStatus"), e.message, true); } } });
+$("dConView").addEventListener("change", () => { $("wPage").hidden = $("dConView").value !== "list"; buildConcert(); renderData(); });
+$("dPage").addEventListener("change", () => { buildConcert(); renderData(); });
+$("dConMonth").addEventListener("change", () => { $("dPage").value = 1; renderConTable(); buildConcert(); renderData(); });
 ["dLabel", "dTitle", "dSubtitle"].forEach(id => $(id).addEventListener("input", renderDataSoon));
-$("dSize").addEventListener("change", renderData);
-$("dConView").addEventListener("change", () => { if (concertCache && $("dSet").value === "concert") { try { concertView(); renderData(); } catch(e){ setSt($("dStatus"), e.message, true); } } });
+$("conAdd").onclick = () => {
+  const key = $("dConMonth").value || todayStr().slice(0, 7);
+  conManual.push({ date: key + "-01", time: "", artist: "", venue: "", city: "", on: true, manual: true });
+  saveManual(); renderConTable(); buildConcert(); renderData();
+  const inputs = $("conTable").querySelectorAll('input[type="text"]');
+  // 新增的那一列在表格中依日期排序，聚焦第一個空白藝人欄
+  const empty = [...inputs].find(i => i.id.startsWith("con-art-") && !i.value); if (empty) empty.focus();
+};
 $("dGo").onclick = async () => {
   $("dGo").disabled = true; setSt($("dStatus"), "抓取中，第一次可能要 10 到 60 秒。");
   try {
-    if ($("dSet").value === "box") await fetchBox(); else await fetchConcert();
+    if ($("dSet").value === "box") await fetchBoxData(); else await fetchConcertData();
     await renderData();
-    setSt($("dStatus"), "完成。標題和副標可以直接修改。");
+    if (!$("dStatus").classList.contains("err")) setSt($("dStatus"), "完成。標題、副標和資料都可以直接修改。");
   } catch(e) { setSt($("dStatus"), e.message, true); }
   finally { $("dGo").disabled = false; }
 };
 $("dDownload").onclick = async () => {
   if (dataState && dataState.demo) { setSt($("dStatus"), "目前是範例資料，請先按「抓取資料」再下載。", true); return; }
-  await renderData(); download(dv, `數據圖卡-${stamp()}.png`);
+  await renderData();
+  const name = dataState.kind === "bars" ? "票房" : dataState.kind === "cal" ? "演唱會月曆" : "演唱會清單";
+  download(dv, `${name}-${stamp()}.png`);
 };
+loadManual();
 
 // ---------- 啟動 ----------
 window.onStudioShow = id => { if (id === "card") renderCard(); else renderData(); };
-updateLimits(); syncDataOpts(); demoState();
+updateLimits(); syncBoxPickers(); syncDataOpts();
 let saved = null; try { saved = localStorage.getItem("qq15-logo"); } catch(e){}
 if (saved) setLogo(saved, false);
 if (current.studio) window.onStudioShow(current.id);
